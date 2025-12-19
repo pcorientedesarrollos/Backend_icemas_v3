@@ -1,195 +1,247 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Equipo } from './entities/equipo.entity';
 import { Marca } from './entities/marca.entity';
 import { TipoEquipo } from './entities/tipo-equipo.entity';
+import { Servicio } from '../servicios/entities/servicio.entity';
 import { CreateEquipoDto } from './dto/create-equipo.dto';
 import { CreateMarcaDto } from './dto/create-marca.dto';
 import { CreateTipoEquipoDto } from './dto/create-tipo-equipo.dto';
 
 @Injectable()
 export class EquiposService {
-    constructor(
-        @InjectRepository(Equipo)
-        private equiposRepository: Repository<Equipo>,
-        @InjectRepository(Marca)
-        private marcasRepository: Repository<Marca>,
-        @InjectRepository(TipoEquipo)
-        private tiposRepository: Repository<TipoEquipo>,
-    ) { }
+  constructor(
+    @InjectRepository(Equipo)
+    private equiposRepository: Repository<Equipo>,
+    @InjectRepository(Marca)
+    private marcasRepository: Repository<Marca>,
+    @InjectRepository(TipoEquipo)
+    private tiposRepository: Repository<TipoEquipo>,
+    @InjectRepository(Servicio)
+    private serviciosRepository: Repository<Servicio>,
+  ) { }
 
-    // ============= EQUIPOS =============
-    async createEquipo(createEquipoDto: CreateEquipoDto) {
-        const equipo = this.equiposRepository.create(createEquipoDto);
-        return await this.equiposRepository.save(equipo);
+  // ============= EQUIPOS =============
+  async createEquipo(createEquipoDto: CreateEquipoDto) {
+    const equipo = this.equiposRepository.create(createEquipoDto);
+    return await this.equiposRepository.save(equipo);
+  }
+
+  async findAllEquipos(filters?: {
+    nombre?: string;
+    marca?: string;
+    serie?: string;
+    tipo?: string;
+    cliente?: string;
+    estado?: number;
+  }) {
+    const query = this.equiposRepository
+      .createQueryBuilder('equipo')
+      .leftJoinAndSelect('equipo.marca', 'marca')
+      .leftJoinAndSelect('equipo.tipoEquipo', 'tipoEquipo')
+      .leftJoinAndSelect('equipo.cliente', 'cliente')
+      .leftJoinAndSelect('equipo.sucursal', 'sucursal');
+
+    if (filters?.nombre) {
+      query.andWhere('equipo.nombre LIKE :nombre', {
+        nombre: `%${filters.nombre}%`,
+      });
+    }
+    if (filters?.marca) {
+      query.andWhere('marca.nombre LIKE :marca', {
+        marca: `%${filters.marca}%`,
+      });
+    }
+    if (filters?.serie) {
+      query.andWhere('equipo.serie LIKE :serie', {
+        serie: `%${filters.serie}%`,
+      });
+    }
+    if (filters?.tipo) {
+      query.andWhere('tipoEquipo.nombre LIKE :tipo', {
+        tipo: `%${filters.tipo}%`,
+      });
+    }
+    if (filters?.cliente) {
+      query.andWhere('cliente.nombre LIKE :cliente', {
+        cliente: `%${filters.cliente}%`,
+      });
+    }
+    if (filters?.estado !== undefined) {
+      query.andWhere('equipo.estado = :estado', { estado: filters.estado });
     }
 
-    async findAllEquipos(filters?: {
-        nombre?: string;
-        marca?: string;
-        serie?: string;
-        tipo?: string;
-        cliente?: string;
-        estado?: number;
-    }) {
-        const query = this.equiposRepository.createQueryBuilder('equipo')
-            .leftJoinAndSelect('equipo.marca', 'marca')
-            .leftJoinAndSelect('equipo.tipoEquipo', 'tipoEquipo')
-            .leftJoinAndSelect('equipo.cliente', 'cliente')
-            .leftJoinAndSelect('equipo.sucursal', 'sucursal');
+    return await query
+      .orderBy('equipo.idEquipo', 'DESC')
+      .take(1000)
+      .getMany();
+  }
 
-        if (filters?.nombre) {
-            query.andWhere('equipo.nombre LIKE :nombre', { nombre: `%${filters.nombre}%` });
-        }
-        if (filters?.marca) {
-            query.andWhere('marca.nombre LIKE :marca', { marca: `%${filters.marca}%` });
-        }
-        if (filters?.serie) {
-            query.andWhere('equipo.serie LIKE :serie', { serie: `%${filters.serie}%` });
-        }
-        if (filters?.tipo) {
-            query.andWhere('tipoEquipo.nombre LIKE :tipo', { tipo: `%${filters.tipo}%` });
-        }
-        if (filters?.cliente) {
-            query.andWhere('cliente.nombre LIKE :cliente', { cliente: `%${filters.cliente}%` });
-        }
-        if (filters?.estado !== undefined) {
-            query.andWhere('equipo.estado = :estado', { estado: filters.estado });
-        }
+  async findOneEquipo(id: number) {
+    const equipo = await this.equiposRepository.findOne({
+      where: { idEquipo: id },
+      relations: ['marca', 'tipoEquipo', 'cliente', 'sucursal', 'servicios'],
+    });
 
-        return await query.take(100).getMany();
+    if (!equipo) {
+      throw new NotFoundException(`Equipo with ID ${id} not found`);
     }
 
-    async findOneEquipo(id: number) {
-        const equipo = await this.equiposRepository.findOne({
-            where: { idEquipo: id },
-            relations: ['marca', 'tipoEquipo', 'cliente', 'sucursal', 'servicios'],
-        });
+    return equipo;
+  }
 
-        if (!equipo) {
-            throw new NotFoundException(`Equipo with ID ${id} not found`);
-        }
+  async updateEquipo(id: number, updateEquipoDto: Partial<CreateEquipoDto>) {
+    await this.findOneEquipo(id);
+    await this.equiposRepository.update({ idEquipo: id }, updateEquipoDto);
+    return this.findOneEquipo(id);
+  }
 
-        return equipo;
+  async removeEquipo(id: number) {
+    const equipo = await this.equiposRepository.findOne({
+      where: { idEquipo: id },
+      relations: ['servicios'],
+    });
+
+    if (!equipo) {
+      throw new NotFoundException(`Equipo with ID ${id} not found`);
     }
 
-    async updateEquipo(id: number, updateEquipoDto: Partial<CreateEquipoDto>) {
-        await this.findOneEquipo(id);
-        await this.equiposRepository.update({ idEquipo: id }, updateEquipoDto);
-        return this.findOneEquipo(id);
+    if (equipo.servicios && equipo.servicios.length > 0) {
+      throw new BadRequestException(
+        'Cannot delete equipo with associated servicios',
+      );
     }
 
-    async removeEquipo(id: number) {
-        const equipo = await this.equiposRepository.findOne({
-            where: { idEquipo: id },
-            relations: ['servicios'],
-        });
+    await this.equiposRepository.remove(equipo);
+    return { message: 'Equipo deleted successfully' };
+  }
 
-        if (!equipo) {
-            throw new NotFoundException(`Equipo with ID ${id} not found`);
-        }
+  async autocompleteNombre(term: string) {
+    const equipos = await this.equiposRepository.find({
+      where: { nombre: Like(`%${term}%`) },
+      select: ['nombre'],
+      take: 10,
+    });
+    return [...new Set(equipos.map((e) => e.nombre))];
+  }
 
-        if (equipo.servicios && equipo.servicios.length > 0) {
-            throw new BadRequestException('Cannot delete equipo with associated servicios');
-        }
+  async autocompleteSerie(term: string) {
+    const equipos = await this.equiposRepository.find({
+      where: { serie: Like(`%${term}%`) },
+      select: ['serie'],
+      take: 10,
+    });
+    return [...new Set(equipos.map((e) => e.serie).filter((s) => s))];
+  }
 
-        await this.equiposRepository.remove(equipo);
-        return { message: 'Equipo deleted successfully' };
+  async porSucursal(idSucursal: number) {
+    return await this.equiposRepository.find({
+      where: { idSucursal },
+      relations: ['marca', 'tipoEquipo'],
+    });
+  }
+
+  // ============= MARCAS =============
+  async createMarca(createMarcaDto: CreateMarcaDto) {
+    const marca = this.marcasRepository.create(createMarcaDto);
+    return await this.marcasRepository.save(marca);
+  }
+
+  async findAllMarcas() {
+    return await this.marcasRepository.find({ order: { nombre: 'ASC' } });
+  }
+
+  async findOneMarca(id: number) {
+    const marca = await this.marcasRepository.findOne({
+      where: { idMarca: id },
+    });
+    if (!marca) {
+      throw new NotFoundException(`Marca with ID ${id} not found`);
+    }
+    return marca;
+  }
+
+  async updateMarca(id: number, updateMarcaDto: Partial<CreateMarcaDto>) {
+    await this.findOneMarca(id);
+    await this.marcasRepository.update({ idMarca: id }, updateMarcaDto);
+    return this.findOneMarca(id);
+  }
+
+  async removeMarca(id: number) {
+    const marca = await this.marcasRepository.findOne({
+      where: { idMarca: id },
+      relations: ['equipos'],
+    });
+
+    if (!marca) {
+      throw new NotFoundException(`Marca with ID ${id} not found`);
     }
 
-    async autocompleteNombre(term: string) {
-        const equipos = await this.equiposRepository.find({
-            where: { nombre: Like(`%${term}%`) },
-            select: ['nombre'],
-            take: 10,
-        });
-        return [...new Set(equipos.map(e => e.nombre))];
+    if (marca.equipos && marca.equipos.length > 0) {
+      throw new BadRequestException(
+        `No se puede eliminar la marca "${marca.nombre}" porque tiene ${marca.equipos.length} equipo(s) asociado(s)`,
+      );
     }
 
-    async autocompleteSerie(term: string) {
-        const equipos = await this.equiposRepository.find({
-            where: { serie: Like(`%${term}%`) },
-            select: ['serie'],
-            take: 10,
-        });
-        return [...new Set(equipos.map(e => e.serie).filter(s => s))];
-    }
+    await this.marcasRepository.remove(marca);
+    return { message: 'Marca deleted successfully' };
+  }
 
-    async porSucursal(idSucursal: number) {
-        return await this.equiposRepository.find({
-            where: { idSucursal },
-            relations: ['marca', 'tipoEquipo'],
-        });
-    }
+  async checkNombreMarca(nombre: string) {
+    const exists = await this.marcasRepository.exist({ where: { nombre } });
+    return { exists };
+  }
 
-    // ============= MARCAS =============
-    async createMarca(createMarcaDto: CreateMarcaDto) {
-        const marca = this.marcasRepository.create(createMarcaDto);
-        return await this.marcasRepository.save(marca);
-    }
+  // ============= TIPOS EQUIPO =============
+  async createTipo(createTipoDto: CreateTipoEquipoDto) {
+    const tipo = this.tiposRepository.create(createTipoDto);
+    return await this.tiposRepository.save(tipo);
+  }
 
-    async findAllMarcas() {
-        return await this.marcasRepository.find({ order: { nombre: 'ASC' } });
-    }
+  async findAllTipos() {
+    return await this.tiposRepository.find({ order: { nombre: 'ASC' } });
+  }
 
-    async findOneMarca(id: number) {
-        const marca = await this.marcasRepository.findOne({ where: { idMarca: id } });
-        if (!marca) {
-            throw new NotFoundException(`Marca with ID ${id} not found`);
-        }
-        return marca;
+  async findOneTipo(id: number) {
+    const tipo = await this.tiposRepository.findOne({ where: { idTipo: id } });
+    if (!tipo) {
+      throw new NotFoundException(`TipoEquipo with ID ${id} not found`);
     }
+    return tipo;
+  }
 
-    async updateMarca(id: number, updateMarcaDto: Partial<CreateMarcaDto>) {
-        await this.findOneMarca(id);
-        await this.marcasRepository.update({ idMarca: id }, updateMarcaDto);
-        return this.findOneMarca(id);
-    }
+  async updateTipo(id: number, updateTipoDto: Partial<CreateTipoEquipoDto>) {
+    await this.findOneTipo(id);
+    await this.tiposRepository.update({ idTipo: id }, updateTipoDto);
+    return this.findOneTipo(id);
+  }
 
-    async removeMarca(id: number) {
-        const marca = await this.findOneMarca(id);
-        await this.marcasRepository.remove(marca);
-        return { message: 'Marca deleted successfully' };
-    }
+  async removeTipo(id: number) {
+    const tipo = await this.findOneTipo(id);
+    await this.tiposRepository.remove(tipo);
+    return { message: 'Tipo Equipo deleted successfully' };
+  }
 
-    async checkNombreMarca(nombre: string) {
-        const exists = await this.marcasRepository.exist({ where: { nombre } });
-        return { exists };
-    }
+  async checkNombreTipo(nombre: string) {
+    const exists = await this.tiposRepository.exist({ where: { nombre } });
+    return { exists };
+  }
 
-    // ============= TIPOS EQUIPO =============
-    async createTipo(createTipoDto: CreateTipoEquipoDto) {
-        const tipo = this.tiposRepository.create(createTipoDto);
-        return await this.tiposRepository.save(tipo);
-    }
+  // ============= SERVICIOS POR EQUIPO =============
+  async getServicios(id: number) {
+    // First verify equipo exists
+    await this.findOneEquipo(id);
 
-    async findAllTipos() {
-        return await this.tiposRepository.find({ order: { nombre: 'ASC' } });
-    }
-
-    async findOneTipo(id: number) {
-        const tipo = await this.tiposRepository.findOne({ where: { idTipo: id } });
-        if (!tipo) {
-            throw new NotFoundException(`TipoEquipo with ID ${id} not found`);
-        }
-        return tipo;
-    }
-
-    async updateTipo(id: number, updateTipoDto: Partial<CreateTipoEquipoDto>) {
-        await this.findOneTipo(id);
-        await this.tiposRepository.update({ idTipo: id }, updateTipoDto);
-        return this.findOneTipo(id);
-    }
-
-    async removeTipo(id: number) {
-        const tipo = await this.findOneTipo(id);
-        await this.tiposRepository.remove(tipo);
-        return { message: 'Tipo Equipo deleted successfully' };
-    }
-
-    async checkNombreTipo(nombre: string) {
-        const exists = await this.tiposRepository.exist({ where: { nombre } });
-        return { exists };
-    }
+    // Get all services for this equipo
+    return await this.serviciosRepository.find({
+      where: { idEquipo: id },
+      relations: ['equipo', 'tecnico', 'tipoServicio', 'cliente'],
+      order: { fechaServicio: 'DESC' },
+    });
+  }
 }

@@ -7,8 +7,8 @@ import { PdfService } from './services/pdf.service';
 
 @Global()
 @Module({
-    imports: [TypeOrmModule.forFeature([FotoServicio, Servicio])],
-    providers: [UploadService, PdfService],
-    exports: [UploadService, PdfService],
+  imports: [TypeOrmModule.forFeature([FotoServicio, Servicio])],
+  providers: [UploadService, PdfService],
+  exports: [UploadService, PdfService],
 })
-export class CommonModule { }
+export class CommonModule {}

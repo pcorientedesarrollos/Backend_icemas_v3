@@ -13,13 +13,18 @@ async function bootstrap() {
 
       // In development, allow any localhost origin
       if (process.env.NODE_ENV !== 'production') {
-        if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        if (
+          origin.startsWith('http://localhost:') ||
+          origin.startsWith('http://127.0.0.1:')
+        ) {
           return callback(null, true);
         }
       }
 
       // In production, use the CORS_ORIGIN from .env
-      const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:4200'];
+      const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+        'http://localhost:4200',
+      ];
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }

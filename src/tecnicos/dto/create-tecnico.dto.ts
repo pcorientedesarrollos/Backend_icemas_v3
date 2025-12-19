@@ -1,27 +1,33 @@
-import { IsNotEmpty, IsString, IsEmail, IsInt, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsEmail,
+  IsInt,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateTecnicoDto {
-    @IsString()
-    @IsNotEmpty()
-    nombre: string;
+  @IsString()
+  @IsNotEmpty()
+  nombre: string;
 
-    @IsString()
-    @IsNotEmpty()
-    telefono: string;
+  @IsString()
+  @IsNotEmpty()
+  telefono: string;
 
-    @IsEmail()
-    @IsNotEmpty()
-    email: string;
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
-    @IsString()
-    @IsNotEmpty()
-    especialidad: string;
+  @IsString()
+  @IsNotEmpty()
+  especialidad: string;
 
-    @IsInt()
-    @IsNotEmpty()
-    activo: number;
+  @IsInt()
+  @IsNotEmpty()
+  activo: number;
 
-    @IsString()
-    @IsOptional()
-    firma?: string;
+  @IsString()
+  @IsOptional()
+  firma?: string;
 }

@@ -19,7 +19,7 @@ import { ServiciosModule } from './servicios/servicios.module';
 
     // Database
     TypeOrmModule.forRoot({
-      type: process.env.DB_TYPE as any || 'mysql',
+      type: (process.env.DB_TYPE as any) || 'mysql',
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT) || 3306,
       username: process.env.DB_USER || 'root',
@@ -28,6 +28,26 @@ import { ServiciosModule } from './servicios/servicios.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: process.env.DB_SYNCHRONIZE === 'true',
       logging: process.env.DB_LOGGING === 'true',
+      // Retry connection on failure
+      retryAttempts: 10,
+      retryDelay: 3000, // 3 seconds between retries
+      // Remote MySQL connection settings
+      extra: {
+        connectionLimit: 10,
+        connectTimeout: 60000, // 60 seconds
+        acquireTimeout: 60000,
+        timeout: 60000,
+        // Keep connection alive - important for cloud databases
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 10000, // 10 seconds
+      },
+      // SSL for remote connections (try without first, then enable if needed)
+      ssl:
+        process.env.DB_HOST !== 'localhost'
+          ? {
+              rejectUnauthorized: false, // Allow self-signed certificates
+            }
+          : false,
     }),
 
     // Common Module (global)
@@ -42,4 +62,4 @@ import { ServiciosModule } from './servicios/servicios.module';
     TecnicosModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

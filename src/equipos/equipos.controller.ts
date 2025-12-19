@@ -1,13 +1,13 @@
 import {
-    Controller,
-    Get,
-    Post,
-    Body,
-    Put,
-    Param,
-    Delete,
-    Query,
-    UseGuards,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { EquiposService } from './equipos.service';
 import { CreateEquipoDto } from './dto/create-equipo.dto';
@@ -18,127 +18,142 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('equipos')
 @UseGuards(JwtAuthGuard)
 export class EquiposController {
-    constructor(private readonly equiposService: EquiposService) { }
+  constructor(private readonly equiposService: EquiposService) {}
 
-    // ============= EQUIPOS =============
-    @Post()
-    createEquipo(@Body() createEquipoDto: CreateEquipoDto) {
-        return this.equiposService.createEquipo(createEquipoDto);
-    }
+  // ============= EQUIPOS =============
+  @Post()
+  createEquipo(@Body() createEquipoDto: CreateEquipoDto) {
+    return this.equiposService.createEquipo(createEquipoDto);
+  }
 
-    @Post('ajax')
-    createEquipoAjax(@Body() createEquipoDto: CreateEquipoDto) {
-        return this.equiposService.createEquipo(createEquipoDto);
-    }
+  @Post('ajax')
+  createEquipoAjax(@Body() createEquipoDto: CreateEquipoDto) {
+    return this.equiposService.createEquipo(createEquipoDto);
+  }
 
-    @Get()
-    findAllEquipos(
-        @Query('nombre') nombre?: string,
-        @Query('marca') marca?: string,
-        @Query('serie') serie?: string,
-        @Query('tipo') tipo?: string,
-        @Query('cliente') cliente?: string,
-        @Query('estado') estado?: string,
-    ) {
-        return this.equiposService.findAllEquipos({
-            nombre,
-            marca,
-            serie,
-            tipo,
-            cliente,
-            estado: estado ? +estado : undefined,
-        });
-    }
+  @Get()
+  findAllEquipos(
+    @Query('nombre') nombre?: string,
+    @Query('marca') marca?: string,
+    @Query('serie') serie?: string,
+    @Query('tipo') tipo?: string,
+    @Query('cliente') cliente?: string,
+    @Query('estado') estado?: string,
+  ) {
+    return this.equiposService.findAllEquipos({
+      nombre,
+      marca,
+      serie,
+      tipo,
+      cliente,
+      estado: estado ? +estado : undefined,
+    });
+  }
 
-    @Get('autocomplete/nombre')
-    autocompleteNombre(@Query('term') term: string) {
-        return this.equiposService.autocompleteNombre(term || '');
-    }
+  @Get('autocomplete/nombre')
+  autocompleteNombre(@Query('term') term: string) {
+    return this.equiposService.autocompleteNombre(term || '');
+  }
 
-    @Get('autocomplete/serie')
-    autocompleteSerie(@Query('term') term: string) {
-        return this.equiposService.autocompleteSerie(term || '');
-    }
+  @Get('autocomplete/serie')
+  autocompleteSerie(@Query('term') term: string) {
+    return this.equiposService.autocompleteSerie(term || '');
+  }
 
-    @Get('por-sucursal/:id')
-    porSucursal(@Param('id') id: string) {
-        return this.equiposService.porSucursal(+id);
-    }
+  @Get('por-sucursal/:id')
+  porSucursal(@Param('id') id: string) {
+    return this.equiposService.porSucursal(+id);
+  }
 
-    @Get(':id')
-    findOneEquipo(@Param('id') id: string) {
-        return this.equiposService.findOneEquipo(+id);
-    }
+  // ============= MARCAS ============= (MOVED BEFORE :id)
+  @Get('marcas')
+  findAllMarcas() {
+    return this.equiposService.findAllMarcas();
+  }
 
-    @Put(':id')
-    updateEquipo(@Param('id') id: string, @Body() updateEquipoDto: Partial<CreateEquipoDto>) {
-        return this.equiposService.updateEquipo(+id, updateEquipoDto);
-    }
+  @Post('marcas')
+  createMarca(@Body() createMarcaDto: CreateMarcaDto) {
+    return this.equiposService.createMarca(createMarcaDto);
+  }
 
-    @Delete(':id')
-    removeEquipo(@Param('id') id: string) {
-        return this.equiposService.removeEquipo(+id);
-    }
+  @Get('marcas/check-nombre')
+  checkNombreMarca(@Query('nombre') nombre: string) {
+    return this.equiposService.checkNombreMarca(nombre);
+  }
 
-    // ============= MARCAS =============
-    @Post('marcas')
-    createMarca(@Body() createMarcaDto: CreateMarcaDto) {
-        return this.equiposService.createMarca(createMarcaDto);
-    }
+  @Get('marcas/:id')
+  findOneMarca(@Param('id') id: string) {
+    return this.equiposService.findOneMarca(+id);
+  }
 
-    @Get('marcas')
-    findAllMarcas() {
-        return this.equiposService.findAllMarcas();
-    }
+  @Put('marcas/:id')
+  updateMarca(
+    @Param('id') id: string,
+    @Body() updateMarcaDto: Partial<CreateMarcaDto>,
+  ) {
+    return this.equiposService.updateMarca(+id, updateMarcaDto);
+  }
 
-    @Get('marcas/check-nombre')
-    checkNombreMarca(@Query('nombre') nombre: string) {
-        return this.equiposService.checkNombreMarca(nombre);
-    }
+  @Delete('marcas/:id')
+  removeMarca(@Param('id') id: string) {
+    return this.equiposService.removeMarca(+id);
+  }
 
-    @Get('marcas/:id')
-    findOneMarca(@Param('id') id: string) {
-        return this.equiposService.findOneMarca(+id);
-    }
+  // ============= TIPOS EQUIPO ============= (MOVED BEFORE :id)
+  @Get('tipos')
+  findAllTipos() {
+    return this.equiposService.findAllTipos();
+  }
 
-    @Put('marcas/:id')
-    updateMarca(@Param('id') id: string, @Body() updateMarcaDto: Partial<CreateMarcaDto>) {
-        return this.equiposService.updateMarca(+id, updateMarcaDto);
-    }
+  @Post('tipos')
+  createTipo(@Body() createTipoDto: CreateTipoEquipoDto) {
+    return this.equiposService.createTipo(createTipoDto);
+  }
 
-    @Delete('marcas/:id')
-    removeMarca(@Param('id') id: string) {
-        return this.equiposService.removeMarca(+id);
-    }
+  @Get('tipos/check-nombre')
+  checkNombreTipo(@Query('nombre') nombre: string) {
+    return this.equiposService.checkNombreTipo(nombre);
+  }
 
-    // ============= TIPOS EQUIPO =============
-    @Post('tipos')
-    createTipo(@Body() createTipoDto: CreateTipoEquipoDto) {
-        return this.equiposService.createTipo(createTipoDto);
-    }
+  @Get('tipos/:id')
+  findOneTipo(@Param('id') id: string) {
+    return this.equiposService.findOneTipo(+id);
+  }
 
-    @Get('tipos')
-    findAllTipos() {
-        return this.equiposService.findAllTipos();
-    }
+  @Put('tipos/:id')
+  updateTipo(
+    @Param('id') id: string,
+    @Body() updateTipoDto: Partial<CreateTipoEquipoDto>,
+  ) {
+    return this.equiposService.updateTipo(+id, updateTipoDto);
+  }
 
-    @Get('tipos/check-nombre')
-    checkNombreTipo(@Query('nombre') nombre: string) {
-        return this.equiposService.checkNombreTipo(nombre);
-    }
+  @Delete('tipos/:id')
+  removeTipo(@Param('id') id: string) {
+    return this.equiposService.removeTipo(+id);
+  }
 
-    @Get('tipos/:id')
-    findOneTipo(@Param('id') id: string) {
-        return this.equiposService.findOneTipo(+id);
-    }
+  // ============= EQUIPOS :id ============= (MOVED AFTER SPECIFIC ROUTES)
+  @Get(':id')
+  findOneEquipo(@Param('id') id: string) {
+    return this.equiposService.findOneEquipo(+id);
+  }
 
-    @Put('tipos/:id')
-    updateTipo(@Param('id') id: string, @Body() updateTipoDto: Partial<CreateTipoEquipoDto>) {
-        return this.equiposService.updateTipo(+id, updateTipoDto);
-    }
+  @Get(':id/servicios')
+  getServicios(@Param('id') id: string) {
+    return this.equiposService.getServicios(+id);
+  }
 
-    @Delete('tipos/:id')
-    removeTipo(@Param('id') id: string) {
-        return this.equiposService.removeTipo(+id);
-    }
+  @Put(':id')
+  updateEquipo(
+    @Param('id') id: string,
+    @Body() updateEquipoDto: Partial<CreateEquipoDto>,
+  ) {
+    return this.equiposService.updateEquipo(+id, updateEquipoDto);
+  }
+
+  @Delete(':id')
+  removeEquipo(@Param('id') id: string) {
+    return this.equiposService.removeEquipo(+id);
+  }
 }
