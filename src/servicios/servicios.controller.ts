@@ -66,7 +66,7 @@ export class ServiciosController {
 
   @Get('en-proceso')
   findEnProceso() {
-    return this.serviciosService.findByEstado('En Proceso');
+
   }
 
   @Get('completados')
@@ -141,6 +141,14 @@ export class ServiciosController {
     @Body() saveSignatureDto: SaveSignatureDto,
   ) {
     return this.serviciosService.saveSignature(+id, saveSignatureDto);
+  }
+
+  @Post(':id/firma-tecnico')
+  saveTechnicianSignature(
+    @Param('id') id: string,
+    @Body() saveSignatureDto: SaveSignatureDto,
+  ) {
+    return this.serviciosService.saveTechnicianSignature(+id, saveSignatureDto);
   }
 
   @Put(':id')

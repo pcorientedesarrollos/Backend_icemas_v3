@@ -156,6 +156,21 @@ export class ServiciosService {
       }
     }
 
+    // Convert firma tecnico file to base64 if it exists
+    if (servicio.firmaTecnico) {
+      try {
+        const firmaPath = path.join(process.cwd(), 'uploads', 'firmas', servicio.firmaTecnico);
+        if (fs.existsSync(firmaPath)) {
+          const buffer = fs.readFileSync(firmaPath);
+          const base64 = `data:image/png;base64,${buffer.toString('base64')}`;
+          servicio.firmaTecnico = base64;
+        }
+      } catch (error) {
+        // If file doesn't exist or can't be read, keep the filename
+        console.error(`Error reading firma tecnico file: ${error.message}`);
+      }
+    }
+
     // Convert photo files to base64 if they exist
     if (servicio.fotos && servicio.fotos.length > 0) {
       servicio.fotos = servicio.fotos.map((foto) => {
@@ -261,6 +276,40 @@ export class ServiciosService {
     );
 
     return { success: true, message: 'Firma guardada correctamente', filename };
+  }
+
+  async saveTechnicianSignature(id: number, saveSignatureDto: SaveSignatureDto) {
+    const { signature } = saveSignatureDto;
+
+    // Validate base64 PNG format
+    if (!signature.startsWith('data:image/png;base64,')) {
+      throw new BadRequestException(
+        'Invalid signature format. Must be base64 PNG.',
+      );
+    }
+
+    // Extract base64 data
+    const base64Data = signature.replace(/^data:image\/png;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Create uploads directory if it doesn't exist
+    const uploadsDir = path.join(process.cwd(), 'uploads', 'firmas');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Save file
+    const filename = `firma_tecnico_${id}_${Date.now()}.png`;
+    const filepath = path.join(uploadsDir, filename);
+    fs.writeFileSync(filepath, buffer);
+
+    // Update servicio
+    await this.serviciosRepository.update(
+      { idServicio: id },
+      { firmaTecnico: filename },
+    );
+
+    return { success: true, message: 'Firma del técnico guardada correctamente', filename };
   }
 
   // Tipos de Servicio

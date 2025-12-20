@@ -52,10 +52,13 @@ export class Servicio {
   folio: string;
 
   @Column({ type: 'varchar', length: 50 })
-  estado: string; // 'Pendiente' | 'En Proceso' | 'Completado' | 'Cancelado'
+  estado: string; // 'Pendiente' | 'Completado' | 'Cancelado'
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   firma: string;
+
+  @Column({ name: 'firma_tecnico', type: 'varchar', length: 255, nullable: true })
+  firmaTecnico: string;
 
   @Column({ name: 'lastUser_id', type: 'bigint', nullable: true })
   lastUserId: number;

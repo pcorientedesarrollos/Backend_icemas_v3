@@ -3,13 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Servicio } from '../../servicios/entities/servicio.entity';
 import PDFDocument from 'pdfkit';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class PdfService {
   constructor(
     @InjectRepository(Servicio)
     private serviciosRepository: Repository<Servicio>,
-  ) {}
+  ) { }
 
   async generateServicioPdf(idServicio: number): Promise<Buffer> {
     // Get servicio with all relationships
@@ -94,9 +96,61 @@ export class PdfService {
         doc.text(`Fotos adjuntas: ${servicio.fotos.length}`);
       }
 
+      // Signatures
+      // Ensure we have enough space for signatures (approx 150px needed)
+      if (doc.y + 150 > doc.page.height - 50) {
+        doc.addPage();
+      } else {
+        doc.moveDown(2);
+      }
+
+      const signatureY = doc.y;
+
+      console.log('Generating PDF - Service ID:', servicio.idServicio);
+      console.log('Firma Tecnico:', servicio.firmaTecnico);
+      console.log('Firma Cliente:', servicio.firma);
+
+      // Technician Signature (Left)
+      // Line and Label
+      doc.fontSize(10).text('Firma del Técnico', 50, signatureY + 80, { width: 200, align: 'center' });
+      doc.moveTo(70, signatureY + 75).lineTo(230, signatureY + 75).stroke();
+
+      if (servicio.firmaTecnico) {
+        try {
+          const firmaTecnicoPath = path.join(process.cwd(), 'uploads', 'firmas', servicio.firmaTecnico);
+          console.log('Loading technician signature from:', firmaTecnicoPath);
+          if (fs.existsSync(firmaTecnicoPath)) {
+            doc.image(firmaTecnicoPath, 70, signatureY, { fit: [160, 70], align: 'center' });
+          } else {
+            console.warn('Technician signature file not found at path:', firmaTecnicoPath);
+          }
+        } catch (e) {
+          console.error('Error loading technician signature for PDF', e);
+        }
+      }
+
+      // Client Signature (Right)
+      // Line and Label
+      doc.text('Firma de Conformidad', 350, signatureY + 80, { width: 200, align: 'center' });
+      doc.moveTo(370, signatureY + 75).lineTo(530, signatureY + 75).stroke();
+
+      if (servicio.firma) {
+        try {
+          const firmaClientePath = path.join(process.cwd(), 'uploads', 'firmas', servicio.firma);
+          console.log('Loading client signature from:', firmaClientePath);
+          if (fs.existsSync(firmaClientePath)) {
+            doc.image(firmaClientePath, 370, signatureY, { fit: [160, 70], align: 'center' });
+          } else {
+            console.warn('Client signature file not found at path:', firmaClientePath);
+          }
+        } catch (e) {
+          console.error('Error loading client signature for PDF', e);
+        }
+      }
+
       // Footer
-      doc.moveDown(2);
-      doc.fontSize(8).text('_'.repeat(80));
+      doc.moveDown(4);
+      doc.fontSize(8).text('_'.repeat(80), 50, doc.y);
       doc.text('ICEMAS - Sistema de Gestión de Servicios', { align: 'center' });
 
       doc.end();

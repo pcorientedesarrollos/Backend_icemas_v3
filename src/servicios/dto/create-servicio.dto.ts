@@ -49,5 +49,5 @@ export class CreateServicioDto {
 
   @IsString()
   @IsNotEmpty()
-  estado: string; // 'Pendiente' | 'En Proceso' | 'Completado' | 'Cancelado'
+  estado: string; // 'Pendiente' | 'Completado' | 'Cancelado'
 }
