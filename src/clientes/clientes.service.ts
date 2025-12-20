@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Cliente } from './entities/cliente.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
+import { Equipo } from '../equipos/entities/equipo.entity';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 
@@ -13,7 +14,9 @@ export class ClientesService {
     private clientesRepository: Repository<Cliente>,
     @InjectRepository(Servicio)
     private serviciosRepository: Repository<Servicio>,
-  ) {}
+    @InjectRepository(Equipo)
+    private equiposRepository: Repository<Equipo>,
+  ) { }
 
   async create(createClienteDto: CreateClienteDto) {
     const cliente = this.clientesRepository.create(createClienteDto);
@@ -110,6 +113,18 @@ export class ClientesService {
       where: { idCliente: id },
       relations: ['equipo', 'tecnico', 'tipoServicio', 'cliente'],
       order: { fechaServicio: 'DESC' },
+    });
+  }
+
+  async getEquipos(id: number) {
+    // First verify cliente exists
+    await this.findOne(id);
+
+    // Get all equipos for this cliente
+    return await this.equiposRepository.find({
+      where: { idCliente: id },
+      relations: ['marca', 'tipoEquipo', 'sucursal', 'cliente'],
+      order: { nombre: 'ASC' },
     });
   }
 }

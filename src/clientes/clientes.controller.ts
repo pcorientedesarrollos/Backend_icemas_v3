@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('clientes')
 @UseGuards(JwtAuthGuard)
 export class ClientesController {
-  constructor(private readonly clientesService: ClientesService) {}
+  constructor(private readonly clientesService: ClientesService) { }
 
   @Post()
   create(@Body() createClienteDto: CreateClienteDto) {
@@ -52,6 +52,11 @@ export class ClientesController {
   @Get(':id/servicios')
   getServicios(@Param('id') id: string) {
     return this.clientesService.getServicios(+id);
+  }
+
+  @Get(':id/equipos')
+  getEquipos(@Param('id') id: string) {
+    return this.clientesService.getEquipos(+id);
   }
 
   @Put(':id')
