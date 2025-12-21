@@ -32,12 +32,14 @@ export class ClientesService {
           { empresa: Like(`%${search}%`) },
           { telefono: Like(`%${search}%`) },
         ],
+        relations: ['sucursales'],
         order: { nombre: 'ASC' },
       });
     }
 
     // Otherwise, return all clientes
     return await this.clientesRepository.find({
+      relations: ['sucursales'],
       order: { nombre: 'ASC' },
     });
   }
@@ -111,7 +113,7 @@ export class ClientesService {
     // Get all services for this cliente
     return await this.serviciosRepository.find({
       where: { idCliente: id },
-      relations: ['equipo', 'tecnico', 'tipoServicio', 'cliente'],
+      relations: ['equipo', 'tecnico', 'tipoServicio', 'cliente', 'sucursal'],
       order: { fechaServicio: 'DESC' },
     });
   }

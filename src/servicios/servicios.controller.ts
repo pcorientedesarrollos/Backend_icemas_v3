@@ -46,6 +46,7 @@ export class ServiciosController {
     @Query('serie') serie?: string,
     @Query('estado') estado?: string,
     @Query('detalle') detalle?: string,
+    @Query('search') search?: string,
   ) {
     return this.serviciosService.findAll({
       idServicio: idServicio ? +idServicio : undefined,
@@ -56,6 +57,7 @@ export class ServiciosController {
       serie,
       estado,
       detalle,
+      search,
     });
   }
 

@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('equipos')
 @UseGuards(JwtAuthGuard)
 export class EquiposController {
-  constructor(private readonly equiposService: EquiposService) {}
+  constructor(private readonly equiposService: EquiposService) { }
 
   // ============= EQUIPOS =============
   @Post()
@@ -39,6 +39,7 @@ export class EquiposController {
     @Query('tipo') tipo?: string,
     @Query('cliente') cliente?: string,
     @Query('estado') estado?: string,
+    @Query('search') search?: string,
   ) {
     return this.equiposService.findAllEquipos({
       nombre,
@@ -47,6 +48,7 @@ export class EquiposController {
       tipo,
       cliente,
       estado: estado ? +estado : undefined,
+      search,
     });
   }
 

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Servicio } from './entities/servicio.entity';
 import { TipoServicio } from './entities/tipo-servicio.entity';
 import { FotoServicio } from './entities/foto-servicio.entity';
@@ -72,6 +72,7 @@ export class ServiciosService {
     serie?: string;
     estado?: string;
     detalle?: string;
+    search?: string;
   }) {
     const query = this.serviciosRepository
       .createQueryBuilder('servicio')
@@ -81,6 +82,19 @@ export class ServiciosService {
       .leftJoinAndSelect('servicio.tecnico', 'tecnico')
       .leftJoinAndSelect('servicio.tipoServicio', 'tipoServicio')
       .leftJoinAndSelect('servicio.lastModifiedBy', 'user');
+
+    if (filters?.search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('servicio.folio LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('cliente.nombre LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('sucursal.nombre LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('equipo.nombre LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('equipo.serie LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('servicio.detalleTrabajo LIKE :search', { search: `%${filters.search}%` });
+        }),
+      );
+    }
 
     if (filters?.idServicio) {
       query.andWhere('servicio.idServicio = :idServicio', {
@@ -168,6 +182,21 @@ export class ServiciosService {
       } catch (error) {
         // If file doesn't exist or can't be read, keep the filename
         console.error(`Error reading firma tecnico file: ${error.message}`);
+      }
+    }
+
+    // Convert technician's profile signature to base64 if it exists
+    if (servicio.tecnico && servicio.tecnico.firma) {
+      try {
+        const firmaPath = path.join(process.cwd(), 'uploads', 'firmas_tecnicos', servicio.tecnico.firma);
+        if (fs.existsSync(firmaPath)) {
+          const buffer = fs.readFileSync(firmaPath);
+          const base64 = `data:image/png;base64,${buffer.toString('base64')}`;
+          servicio.tecnico.firma = base64;
+        }
+      } catch (error) {
+        // If file doesn't exist or can't be read, keep the filename
+        console.error(`Error reading technician firma file: ${error.message}`);
       }
     }
 

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository, Like, Brackets } from 'typeorm';
 import { Equipo } from './entities/equipo.entity';
 import { Marca } from './entities/marca.entity';
 import { TipoEquipo } from './entities/tipo-equipo.entity';
@@ -39,6 +39,7 @@ export class EquiposService {
     tipo?: string;
     cliente?: string;
     estado?: number;
+    search?: string;
   }) {
     const query = this.equiposRepository
       .createQueryBuilder('equipo')
@@ -46,6 +47,20 @@ export class EquiposService {
       .leftJoinAndSelect('equipo.tipoEquipo', 'tipoEquipo')
       .leftJoinAndSelect('equipo.cliente', 'cliente')
       .leftJoinAndSelect('equipo.sucursal', 'sucursal');
+
+    if (filters?.search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('equipo.nombre LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('marca.nombre LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('equipo.serie LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('tipoEquipo.nombre LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('cliente.nombre LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('sucursal.nombre LIKE :search', { search: `%${filters.search}%` })
+            .orWhere('CAST(equipo.idEquipo AS CHAR) LIKE :search', { search: `%${filters.search}%` });
+        }),
+      );
+    }
 
     if (filters?.nombre) {
       query.andWhere('equipo.nombre LIKE :nombre', {
