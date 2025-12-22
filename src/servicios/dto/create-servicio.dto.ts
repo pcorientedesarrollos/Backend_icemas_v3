@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsDateString,
+  IsArray,
 } from 'class-validator';
 
 export class CreateServicioDto {
@@ -23,9 +24,13 @@ export class CreateServicioDto {
   @IsNotEmpty()
   idSucursal: number;
 
+  @IsInt({ each: true })
+  @IsOptional()
+  idsEquipos?: number[]; // Array of equipment IDs
+
   @IsInt()
-  @IsNotEmpty()
-  idEquipo: number;
+  @IsOptional()
+  idEquipo?: number; // Keep for backward compatibility
 
   @IsDateString()
   @IsNotEmpty()

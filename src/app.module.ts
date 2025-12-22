@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { SucursalesModule } from './sucursales/sucursales.module';
 import { EquiposModule } from './equipos/equipos.module';
 import { ServiciosModule } from './servicios/servicios.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -45,8 +46,8 @@ import { ServiciosModule } from './servicios/servicios.module';
       ssl:
         process.env.DB_HOST !== 'localhost'
           ? {
-              rejectUnauthorized: false, // Allow self-signed certificates
-            }
+            rejectUnauthorized: false, // Allow self-signed certificates
+          }
           : false,
     }),
 
@@ -60,6 +61,7 @@ import { ServiciosModule } from './servicios/servicios.module';
     EquiposModule,
     ServiciosModule,
     TecnicosModule,
+    UsersModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

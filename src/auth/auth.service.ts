@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UserRole } from './enums/user-role.enum';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +17,7 @@ export class AuthService {
   ) { }
 
   async register(registerDto: RegisterDto) {
-    const { name, email, password } = registerDto;
+    const { name, email, password, role } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.usersRepository.findOne({
@@ -34,6 +35,7 @@ export class AuthService {
       name,
       email,
       password: hashedPassword,
+      role: role || UserRole.TECNICO, // Default to TECNICO if not provided
       emailVerifiedAt: new Date(), // Auto-verify for now
     });
 

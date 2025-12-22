@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Servicio } from '../../servicios/entities/servicio.entity';
+import { UserRole } from '../enums/user-role.enum';
 
 @Entity('users')
 export class User {
@@ -19,8 +20,8 @@ export class User {
   @Column({ type: 'varchar', length: 255, unique: true })
   email: string;
 
-  @Column({ type: 'varchar', length: 50, default: 'usuario' })
-  role: string;
+  @Column({ type: 'varchar', length: 50, default: UserRole.TECNICO })
+  role: UserRole;
 
   @Column({ name: 'email_verified_at', type: 'timestamp', nullable: true })
   emailVerifiedAt: Date;

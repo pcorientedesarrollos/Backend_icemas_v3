@@ -255,7 +255,7 @@ export class EquiposService {
     // Get all services for this equipo
     return await this.serviciosRepository.find({
       where: { idEquipo: id },
-      relations: ['equipo', 'tecnico', 'tipoServicio', 'cliente'],
+      relations: ['equipo', 'tecnico', 'tipoServicio', 'cliente', 'sucursal'],
       order: { fechaServicio: 'DESC' },
     });
   }

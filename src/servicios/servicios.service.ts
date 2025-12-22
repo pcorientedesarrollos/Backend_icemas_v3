@@ -8,6 +8,7 @@ import { Repository, Brackets } from 'typeorm';
 import { Servicio } from './entities/servicio.entity';
 import { TipoServicio } from './entities/tipo-servicio.entity';
 import { FotoServicio } from './entities/foto-servicio.entity';
+import { ServicioEquipo } from './entities/servicio-equipo.entity';
 import { CreateServicioDto } from './dto/create-servicio.dto';
 import { SaveSignatureDto } from './dto/save-signature.dto';
 import * as fs from 'fs';
@@ -22,6 +23,8 @@ export class ServiciosService {
     private tiposServicioRepository: Repository<TipoServicio>,
     @InjectRepository(FotoServicio)
     private fotosRepository: Repository<FotoServicio>,
+    @InjectRepository(ServicioEquipo)
+    private servicioEquipoRepository: Repository<ServicioEquipo>,
   ) { }
 
   async create(createServicioDto: CreateServicioDto, userId: number) {
@@ -30,12 +33,27 @@ export class ServiciosService {
       folio = await this.generateFolio();
     }
 
+    // Extract idsEquipos from DTO
+    const { idsEquipos, ...servicioData } = createServicioDto;
+
     const servicio = this.serviciosRepository.create({
-      ...createServicioDto,
+      ...servicioData,
       folio,
-      lastUserId: userId, // Audit trail
+      lastUserId: userId,
     });
-    return await this.serviciosRepository.save(servicio);
+
+    const savedServicio = await this.serviciosRepository.save(servicio);
+
+    // Create equipment relations if provided
+    if (idsEquipos && idsEquipos.length > 0) {
+      const equiposAsignados = idsEquipos.map(idEquipo => ({
+        idServicio: savedServicio.idServicio,
+        idEquipo,
+      }));
+      await this.servicioEquipoRepository.save(equiposAsignados);
+    }
+
+    return savedServicio;
   }
 
   private async generateFolio(): Promise<string> {
@@ -80,6 +98,9 @@ export class ServiciosService {
       .leftJoinAndSelect('servicio.sucursal', 'sucursal')
       .leftJoinAndSelect('servicio.equipo', 'equipo')
       .leftJoinAndSelect('servicio.tecnico', 'tecnico')
+      .leftJoinAndSelect('servicio.equiposAsignados', 'equiposAsignados')
+      .leftJoinAndSelect('equiposAsignados.equipo', 'equipoAsignado')
+      .leftJoinAndSelect('equipoAsignado.marca', 'marcaAsignada')
       .leftJoinAndSelect('servicio.tipoServicio', 'tipoServicio')
       .leftJoinAndSelect('servicio.lastModifiedBy', 'user');
 
@@ -148,6 +169,9 @@ export class ServiciosService {
         'tipoServicio',
         'lastModifiedBy',
         'fotos',
+        'equiposAsignados',
+        'equiposAsignados.equipo',
+        'equiposAsignados.equipo.marca',
       ],
     });
 
@@ -229,8 +253,8 @@ export class ServiciosService {
   ) {
     await this.findOne(id);
 
-    // Extract fotos and firma from the DTO (they need special handling)
-    const { fotos, firma, ...servicioData } = updateServicioDto as any;
+    // Extract fotos, firma, and idsEquipos from the DTO
+    const { fotos, firma, idsEquipos, ...servicioData } = updateServicioDto as any;
 
     // Update the basic servicio fields
     await this.serviciosRepository.update(
@@ -244,6 +268,21 @@ export class ServiciosService {
         { idServicio: id },
         { firma },
       );
+    }
+
+    // Handle equipment relations if provided
+    if (idsEquipos && Array.isArray(idsEquipos)) {
+      // Delete existing relations
+      await this.servicioEquipoRepository.delete({ idServicio: id });
+
+      // Create new relations
+      if (idsEquipos.length > 0) {
+        const equiposAsignados = idsEquipos.map(idEquipo => ({
+          idServicio: id,
+          idEquipo,
+        }));
+        await this.servicioEquipoRepository.save(equiposAsignados);
+      }
     }
 
     // Handle fotos separately if provided

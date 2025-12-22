@@ -14,6 +14,7 @@ import { Equipo } from '../../equipos/entities/equipo.entity';
 import { Tecnico } from '../../tecnicos/entities/tecnico.entity';
 import { TipoServicio } from './tipo-servicio.entity';
 import { FotoServicio } from './foto-servicio.entity';
+import { ServicioEquipo } from './servicio-equipo.entity';
 import { User } from '../../auth/entities/user.entity';
 
 @Entity('servicios')
@@ -92,6 +93,9 @@ export class Servicio {
   @ManyToOne(() => User, (user) => user.serviciosModified)
   @JoinColumn({ name: 'lastUser_id' })
   lastModifiedBy: User;
+
+  @OneToMany(() => ServicioEquipo, (se) => se.servicio, { cascade: true })
+  equiposAsignados: ServicioEquipo[];
 
   @OneToMany(() => FotoServicio, (foto) => foto.servicio, { cascade: true })
   fotos: FotoServicio[];
