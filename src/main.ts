@@ -22,9 +22,14 @@ async function bootstrap() {
       }
 
       // In production, use the CORS_ORIGIN from .env
-      const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+      const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || [
         'http://localhost:4200',
       ];
+
+      console.log('CORS Check - Origin:', origin);
+      console.log('CORS Check - Allowed:', allowedOrigins);
+      console.log('CORS Check - NODE_ENV:', process.env.NODE_ENV);
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
