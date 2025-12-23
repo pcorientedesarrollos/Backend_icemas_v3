@@ -58,7 +58,7 @@ export class ServiciosService {
 
   private async generateFolio(): Promise<string> {
     const now = new Date();
-    const year = now.getFullYear();
+    const year = now.getFullYear().toString().slice(-2); // Solo últimos 2 dígitos del año
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const prefix = `SRV-${year}${month}-`;
 
@@ -71,14 +71,14 @@ export class ServiciosService {
     let sequence = 1;
     if (lastService) {
       const parts = lastService.folio.split('-');
-      // Expected format: SRV-YYYYMM-XXXX or SRV-YYYYMM-XXXXX
+      // Expected format: SRV-YYMM-XXX
       const lastSequence = parseInt(parts[parts.length - 1], 10);
       if (!isNaN(lastSequence)) {
         sequence = lastSequence + 1;
       }
     }
 
-    return `${prefix}${sequence.toString().padStart(5, '0')}`;
+    return `${prefix}${sequence.toString().padStart(3, '0')}`; // 3 dígitos para el consecutivo
   }
 
   async findAll(filters?: {

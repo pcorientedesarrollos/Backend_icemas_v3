@@ -252,11 +252,21 @@ export class EquiposService {
     // First verify equipo exists
     await this.findOneEquipo(id);
 
-    // Get all services for this equipo
-    return await this.serviciosRepository.find({
-      where: { idEquipo: id },
-      relations: ['equipo', 'tecnico', 'tipoServicio', 'cliente', 'sucursal'],
-      order: { fechaServicio: 'DESC' },
-    });
+    // Get all services where this equipo appears (either as primary or additional)
+    const servicios = await this.serviciosRepository
+      .createQueryBuilder('servicio')
+      .leftJoinAndSelect('servicio.equipo', 'equipo')
+      .leftJoinAndSelect('servicio.tecnico', 'tecnico')
+      .leftJoinAndSelect('servicio.tipoServicio', 'tipoServicio')
+      .leftJoinAndSelect('servicio.cliente', 'cliente')
+      .leftJoinAndSelect('servicio.sucursal', 'sucursal')
+      .leftJoinAndSelect('servicio.equiposAsignados', 'equiposAsignados')
+      .leftJoinAndSelect('equiposAsignados.equipo', 'equipoAsignado')
+      .where('servicio.idEquipo = :id', { id })
+      .orWhere('equiposAsignados.idEquipo = :id', { id })
+      .orderBy('servicio.fechaServicio', 'DESC')
+      .getMany();
+
+    return servicios;
   }
 }
