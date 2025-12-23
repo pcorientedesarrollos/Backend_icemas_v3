@@ -13,7 +13,7 @@ export class Marca {
   @PrimaryGeneratedColumn({ name: 'id_marca' })
   idMarca: number;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true, name: 'nombreMarca' })
   nombre: string;
 
   @Column({ type: 'text', nullable: true })
