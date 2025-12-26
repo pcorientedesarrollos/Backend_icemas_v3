@@ -146,6 +146,11 @@ export class EquiposController {
     return this.equiposService.getServicios(+id);
   }
 
+  @Get(':id/servicios-asociados')
+  getServiciosAsociados(@Param('id') id: string) {
+    return this.equiposService.getServiciosAsociadosParaEliminacion(+id);
+  }
+
   @Put(':id')
   updateEquipo(
     @Param('id') id: string,
@@ -155,7 +160,10 @@ export class EquiposController {
   }
 
   @Delete(':id')
-  removeEquipo(@Param('id') id: string) {
-    return this.equiposService.removeEquipo(+id);
+  removeEquipo(
+    @Param('id') id: string,
+    @Query('force') force?: string,
+  ) {
+    return this.equiposService.removeEquipo(+id, force === 'true');
   }
 }

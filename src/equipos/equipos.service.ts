@@ -119,7 +119,7 @@ export class EquiposService {
     return this.findOneEquipo(id);
   }
 
-  async removeEquipo(id: number) {
+  async removeEquipo(id: number, force: boolean = false) {
     const equipo = await this.equiposRepository.findOne({
       where: { idEquipo: id },
       relations: ['servicios'],
@@ -139,14 +139,28 @@ export class EquiposService {
 
     const totalServicios = serviciosDirectos + serviciosEnTablaRelacion;
 
-    if (totalServicios > 0) {
+    if (totalServicios > 0 && !force) {
       throw new BadRequestException(
         `No se puede eliminar este equipo porque tiene ${totalServicios} servicio(s) asociado(s). Primero elimina los servicios relacionados.`,
       );
     }
 
+    // If force = true, delete all associated servicios first
+    if (force && totalServicios > 0) {
+      // Delete from servicio_equipos table
+      await this.servicioEquiposRepository.delete({ idEquipo: id });
+
+      // Delete servicios where id_equipo = id
+      if (serviciosDirectos > 0) {
+        await this.serviciosRepository.delete({ idEquipo: id });
+      }
+    }
+
     await this.equiposRepository.remove(equipo);
-    return { message: 'Equipo eliminado correctamente' };
+    return {
+      message: 'Equipo eliminado correctamente',
+      serviciosEliminados: force ? totalServicios : 0
+    };
   }
 
   async autocompleteNombre(term: string) {
@@ -281,5 +295,69 @@ export class EquiposService {
       .getMany();
 
     return servicios;
+  }
+
+  // Get servicios asociados for deletion confirmation
+  async getServiciosAsociadosParaEliminacion(id: number) {
+    await this.findOneEquipo(id);
+
+    // Get servicios with old relation (id_equipo)
+    const serviciosDirectos = await this.serviciosRepository
+      .createQueryBuilder('servicio')
+      .leftJoinAndSelect('servicio.cliente', 'cliente')
+      .leftJoinAndSelect('servicio.sucursal', 'sucursal')
+      .leftJoinAndSelect('servicio.tecnico', 'tecnico')
+      .where('servicio.idEquipo = :id', { id })
+      .select([
+        'servicio.idServicio',
+        'servicio.folio',
+        'servicio.fechaServicio',
+        'servicio.estado',
+        'cliente.nombre',
+        'cliente.empresa',
+        'sucursal.nombre',
+        'tecnico.nombre'
+      ])
+      .getMany();
+
+    // Get servicios from servicio_equipos table
+    const serviciosRelacion = await this.servicioEquiposRepository
+      .createQueryBuilder('se')
+      .leftJoinAndSelect('se.servicio', 'servicio')
+      .leftJoinAndSelect('servicio.cliente', 'cliente')
+      .leftJoinAndSelect('servicio.sucursal', 'sucursal')
+      .leftJoinAndSelect('servicio.tecnico', 'tecnico')
+      .where('se.idEquipo = :id', { id })
+      .select([
+        'se.id',
+        'servicio.idServicio',
+        'servicio.folio',
+        'servicio.fechaServicio',
+        'servicio.estado',
+        'cliente.nombre',
+        'cliente.empresa',
+        'sucursal.nombre',
+        'tecnico.nombre'
+      ])
+      .getMany();
+
+    // Combine and deduplicate
+    const allServicios = [...serviciosDirectos, ...serviciosRelacion.map(sr => sr.servicio)];
+    const uniqueServicios = Array.from(
+      new Map(allServicios.map(s => [s.idServicio, s])).values()
+    );
+
+    return {
+      count: uniqueServicios.length,
+      servicios: uniqueServicios.map(s => ({
+        idServicio: s.idServicio,
+        folio: s.folio,
+        fechaServicio: s.fechaServicio,
+        estado: s.estado,
+        cliente: s.cliente?.nombre || s.cliente?.empresa || '',
+        sucursal: s.sucursal?.nombre || '',
+        tecnico: s.tecnico?.nombre || ''
+      }))
+    };
   }
 }
