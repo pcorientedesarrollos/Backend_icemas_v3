@@ -24,6 +24,9 @@ export class Cliente {
   @Column({ type: 'varchar', length: 20, nullable: true })
   telefono: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  email: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
 

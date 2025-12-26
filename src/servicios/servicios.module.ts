@@ -6,9 +6,13 @@ import { TipoServicio } from './entities/tipo-servicio.entity';
 import { ServicioEquipo } from './entities/servicio-equipo.entity';
 import { ServiciosController } from './servicios.controller';
 import { ServiciosService } from './servicios.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Servicio, FotoServicio, TipoServicio, ServicioEquipo])],
+  imports: [
+    TypeOrmModule.forFeature([Servicio, FotoServicio, TipoServicio, ServicioEquipo]),
+    NotificationsModule,
+  ],
   controllers: [ServiciosController],
   providers: [ServiciosService],
   exports: [ServiciosService],

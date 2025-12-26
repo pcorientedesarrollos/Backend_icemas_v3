@@ -12,6 +12,8 @@ import {
   UploadedFile,
   UseInterceptors,
   Res,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
@@ -21,6 +23,7 @@ import { SaveSignatureDto } from './dto/save-signature.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UploadService } from '../common/services/upload.service';
 import { PdfService } from '../common/services/pdf.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Controller('servicios')
 @UseGuards(JwtAuthGuard)
@@ -29,6 +32,7 @@ export class ServiciosController {
     private readonly serviciosService: ServiciosService,
     private readonly uploadService: UploadService,
     private readonly pdfService: PdfService,
+    private readonly notificationsService: NotificationsService,
   ) { }
 
   @Post()
@@ -185,6 +189,46 @@ export class ServiciosController {
   @Delete('fotos/:fotoId')
   deleteFoto(@Param('fotoId') fotoId: string) {
     return this.uploadService.deleteFoto(+fotoId);
+  }
+
+  @Post(':id/send-pdf')
+  async sendPdfToClient(@Param('id') id: string) {
+    try {
+      // Get servicio details
+      const servicio = await this.serviciosService.findOne(+id);
+
+      // Validate cliente has email
+      if (!servicio.cliente?.email) {
+        throw new HttpException(
+          'El cliente no tiene un email registrado',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Generate PDF
+      const pdfBuffer = await this.pdfService.generateServicioPdf(+id);
+
+      // Send email
+      await this.notificationsService.sendServicePDF(
+        servicio.cliente.email,
+        servicio.cliente.nombre,
+        servicio.folio,
+        pdfBuffer,
+      );
+
+      return {
+        message: 'PDF enviado exitosamente',
+        email: servicio.cliente.email,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Error al enviar el PDF: ' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Get(':id/pdf')

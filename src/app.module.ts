@@ -9,6 +9,7 @@ import { SucursalesModule } from './sucursales/sucursales.module';
 import { EquiposModule } from './equipos/equipos.module';
 import { ServiciosModule } from './servicios/servicios.module';
 import { UsersModule } from './users/users.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { UsersModule } from './users/users.module';
     ServiciosModule,
     TecnicosModule,
     UsersModule,
+    NotificationsModule,
   ],
 })
 export class AppModule { }
