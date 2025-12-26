@@ -9,6 +9,7 @@ import { Equipo } from './entities/equipo.entity';
 import { Marca } from './entities/marca.entity';
 import { TipoEquipo } from './entities/tipo-equipo.entity';
 import { Servicio } from '../servicios/entities/servicio.entity';
+import { ServicioEquipo } from '../servicios/entities/servicio-equipo.entity';
 import { CreateEquipoDto } from './dto/create-equipo.dto';
 import { CreateMarcaDto } from './dto/create-marca.dto';
 import { CreateTipoEquipoDto } from './dto/create-tipo-equipo.dto';
@@ -24,6 +25,8 @@ export class EquiposService {
     private tiposRepository: Repository<TipoEquipo>,
     @InjectRepository(Servicio)
     private serviciosRepository: Repository<Servicio>,
+    @InjectRepository(ServicioEquipo)
+    private servicioEquiposRepository: Repository<ServicioEquipo>,
   ) { }
 
   // ============= EQUIPOS =============
@@ -123,17 +126,27 @@ export class EquiposService {
     });
 
     if (!equipo) {
-      throw new NotFoundException(`Equipo with ID ${id} not found`);
+      throw new NotFoundException(`Equipo con ID ${id} no encontrado`);
     }
 
-    if (equipo.servicios && equipo.servicios.length > 0) {
+    // Check servicios with old relation (id_equipo column)
+    const serviciosDirectos = equipo.servicios?.length || 0;
+
+    // Check servicios with new relation (servicio_equipos table)
+    const serviciosEnTablaRelacion = await this.servicioEquiposRepository.count({
+      where: { idEquipo: id },
+    });
+
+    const totalServicios = serviciosDirectos + serviciosEnTablaRelacion;
+
+    if (totalServicios > 0) {
       throw new BadRequestException(
-        'Cannot delete equipo with associated servicios',
+        `No se puede eliminar este equipo porque tiene ${totalServicios} servicio(s) asociado(s). Primero elimina los servicios relacionados.`,
       );
     }
 
     await this.equiposRepository.remove(equipo);
-    return { message: 'Equipo deleted successfully' };
+    return { message: 'Equipo eliminado correctamente' };
   }
 
   async autocompleteNombre(term: string) {
