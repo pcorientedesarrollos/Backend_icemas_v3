@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
+import { UppercaseResponseInterceptor } from './common/interceptors/uppercase-response.interceptor';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -51,6 +52,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Global Interceptors
+  app.useGlobalInterceptors(new UppercaseResponseInterceptor());
 
   // Global prefix for all routes
   app.setGlobalPrefix('api');

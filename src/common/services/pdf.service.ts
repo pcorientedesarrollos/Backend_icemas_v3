@@ -146,30 +146,46 @@ export class PdfService {
         doc.moveDown();
       }
 
-      // ===== WORK DETAILS =====
+      // ===== WORK DETAILS (Two Columns) =====
       doc.moveDown(1);
       this.drawSection(doc, 'DETALLE DEL TRABAJO', margin, contentWidth);
 
+      const colWidth = (contentWidth - 20) / 2;
+      const col1X = margin;
+      const detailsCol2X = margin + colWidth + 20;
+      const startY = doc.y;
+
+      // Column 1: Descripción
       if (servicio.descripcion) {
         doc.font('Helvetica-Bold').fontSize(9).fillColor('#1F2937')
-          .text('Descripción del Problema:', margin, doc.y);
+          .text('Descripción del Problema:', col1X, startY);
         doc.moveDown(0.3);
         doc.font('Helvetica').fillColor('#374151')
-          .text(servicio.descripcion, margin, doc.y, { width: contentWidth });
-        doc.moveDown(0.5);
+          .text(servicio.descripcion, col1X, doc.y, { width: colWidth, align: 'left' });
       }
 
+      // Column 2: Trabajo Realizado
+      // Reset Y to startY for the second column, but we need to track the max height used
+      const col1EndY = doc.y;
+
       if (servicio.detalleTrabajo) {
+        doc.y = startY; // Go back to top for second column
         doc.font('Helvetica-Bold').fontSize(9).fillColor('#1F2937')
-          .text('Trabajo Realizado:', margin, doc.y);
+          .text('Trabajo Realizado:', detailsCol2X, startY);
         doc.moveDown(0.3);
         doc.font('Helvetica').fillColor('#374151')
-          .text(servicio.detalleTrabajo, margin, doc.y, { width: contentWidth });
+          .text(servicio.detalleTrabajo, detailsCol2X, doc.y, { width: colWidth, align: 'left' });
       }
+
+      const col2EndY = doc.y;
+
+      // Move cursor to below the longest column
+      doc.y = Math.max(col1EndY, col2EndY) + 10;
+
 
       // ===== SIGNATURES (PRIMERO) =====
       // Asegurar espacio para firmas
-      if (doc.y + 100 > doc.page.height - 80) {
+      if (doc.y + 120 > doc.page.height - 80) {
         doc.addPage();
         doc.y = 50;
       } else {
@@ -178,7 +194,7 @@ export class PdfService {
 
       const signatureY = doc.y;
       const sigWidth = 150;
-      const sigHeight = 60;
+      const sigHeight = 80; // Increased from 60
 
       // Firma del Técnico (izquierda)
       doc.font('Helvetica-Bold').fontSize(10).fillColor('#4d82bc')
