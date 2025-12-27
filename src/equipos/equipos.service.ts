@@ -195,7 +195,7 @@ export class EquiposService {
   }
 
   async findAllMarcas() {
-    return await this.marcasRepository.find({ order: { nombre: 'ASC' } });
+    return await this.marcasRepository.find({ order: { idMarca: 'DESC' } });
   }
 
   async findOneMarca(id: number) {
@@ -246,7 +246,7 @@ export class EquiposService {
   }
 
   async findAllTipos() {
-    return await this.tiposRepository.find({ order: { nombre: 'ASC' } });
+    return await this.tiposRepository.find({ order: { idTipo: 'DESC' } });
   }
 
   async findOneTipo(id: number) {

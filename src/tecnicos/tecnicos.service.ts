@@ -19,7 +19,7 @@ export class TecnicosService {
     private tecnicosRepository: Repository<Tecnico>,
     @InjectRepository(Servicio)
     private serviciosRepository: Repository<Servicio>,
-  ) {}
+  ) { }
 
   async create(createTecnicoDto: CreateTecnicoDto) {
     const tecnico = this.tecnicosRepository.create(createTecnicoDto);
@@ -27,7 +27,7 @@ export class TecnicosService {
   }
 
   async findAll() {
-    return await this.tecnicosRepository.find({ order: { nombre: 'ASC' } });
+    return await this.tecnicosRepository.find({ order: { idTecnico: 'DESC' } });
   }
 
   async autocomplete(term: string) {
@@ -121,6 +121,61 @@ export class TecnicosService {
     );
 
     return { success: true, message: 'Firma guardada correctamente', filename };
+  }
+
+  async getSignature(id: number) {
+    const tecnico = await this.findOne(id);
+
+    if (!tecnico.firma) {
+      throw new NotFoundException('This technician has no signature saved');
+    }
+
+    // Construct file path
+    const firmaPath = path.join(
+      process.cwd(),
+      'uploads',
+      'firmas_tecnicos',
+      tecnico.firma,
+    );
+
+    if (!fs.existsSync(firmaPath)) {
+      throw new NotFoundException('Signature file not found on server');
+    }
+
+    const fileBuffer = fs.readFileSync(firmaPath);
+    return {
+      signature: `data:image/png;base64,${fileBuffer.toString('base64')}`,
+    };
+  }
+
+  async deleteSignature(id: number) {
+    const tecnico = await this.findOne(id);
+
+    if (!tecnico.firma) {
+      throw new NotFoundException('Tecnico does not have a signature to delete');
+    }
+
+    // Construct file path
+    const firmaPath = path.join(
+      process.cwd(),
+      'uploads',
+      'firmas_tecnicos',
+      tecnico.firma,
+    );
+
+    // Delete file from filesystem if it exists
+    if (fs.existsSync(firmaPath)) {
+      try {
+        fs.unlinkSync(firmaPath);
+      } catch (error) {
+        console.error(`Error deleting signature file: ${error.message}`);
+      }
+    }
+
+    // Remove reference from database
+    await this.tecnicosRepository.update({ idTecnico: id }, { firma: null });
+
+    return { message: 'Signature deleted successfully' };
   }
 
   async getServicios(id: number) {

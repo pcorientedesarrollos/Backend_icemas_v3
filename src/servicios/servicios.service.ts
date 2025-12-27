@@ -152,8 +152,9 @@ export class ServiciosService {
       });
     }
 
+
     return await query
-      .orderBy('servicio.fechaServicio', 'DESC')
+      .orderBy('servicio.idServicio', 'DESC')
       .take(1000)
       .getMany();
   }
@@ -383,7 +384,7 @@ export class ServiciosService {
   // Tipos de Servicio
   async findAllTiposServicio() {
     return await this.tiposServicioRepository.find({
-      order: { nombre: 'ASC' },
+      order: { idTipoServicio: 'DESC' },
     });
   }
 

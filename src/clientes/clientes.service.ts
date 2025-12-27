@@ -33,14 +33,14 @@ export class ClientesService {
           { telefono: Like(`%${search}%`) },
         ],
         relations: ['sucursales'],
-        order: { nombre: 'ASC' },
+        order: { idCliente: 'DESC' },
       });
     }
 
     // Otherwise, return all clientes
     return await this.clientesRepository.find({
       relations: ['sucursales'],
-      order: { nombre: 'ASC' },
+      order: { idCliente: 'DESC' },
     });
   }
 

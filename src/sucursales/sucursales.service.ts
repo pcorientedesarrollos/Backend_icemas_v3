@@ -13,7 +13,7 @@ export class SucursalesService {
     private sucursalesRepository: Repository<Sucursal>,
     @InjectRepository(Servicio)
     private serviciosRepository: Repository<Servicio>,
-  ) {}
+  ) { }
 
   async create(createSucursalDto: CreateSucursalDto) {
     const sucursal = this.sucursalesRepository.create(createSucursalDto);
@@ -25,7 +25,7 @@ export class SucursalesService {
     return await this.sucursalesRepository.find({
       where,
       relations: ['cliente'],
-      order: { nombre: 'ASC' },
+      order: { idSucursal: 'DESC' },
     });
   }
 

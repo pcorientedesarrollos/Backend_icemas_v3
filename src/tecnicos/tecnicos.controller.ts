@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('tecnicos')
 @UseGuards(JwtAuthGuard)
 export class TecnicosController {
-  constructor(private readonly tecnicosService: TecnicosService) {}
+  constructor(private readonly tecnicosService: TecnicosService) { }
 
   @Post()
   create(@Body() createTecnicoDto: CreateTecnicoDto) {
@@ -44,12 +44,22 @@ export class TecnicosController {
     return this.tecnicosService.getServicios(+id);
   }
 
+  @Get(':id/firma')
+  getSignature(@Param('id') id: string) {
+    return this.tecnicosService.getSignature(+id);
+  }
+
   @Post(':id/firma')
   saveSignature(
     @Param('id') id: string,
     @Body() saveSignatureDto: SaveSignatureDto,
   ) {
     return this.tecnicosService.saveSignature(+id, saveSignatureDto);
+  }
+
+  @Delete(':id/firma')
+  deleteSignature(@Param('id') id: string) {
+    return this.tecnicosService.deleteSignature(+id);
   }
 
   @Put(':id')
