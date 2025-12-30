@@ -10,6 +10,8 @@ import { EquiposModule } from './equipos/equipos.module';
 import { ServiciosModule } from './servicios/servicios.module';
 import { UsersModule } from './users/users.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -64,6 +66,12 @@ import { NotificationsModule } from './notifications/notifications.module';
     TecnicosModule,
     UsersModule,
     NotificationsModule,
+
+    // Serve Static Files (Uploads)
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
   ],
 })
 export class AppModule { }
