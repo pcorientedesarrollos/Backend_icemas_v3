@@ -90,6 +90,17 @@ export class ServiciosController {
     return this.serviciosService.checkFolio(folio);
   }
 
+  @Get('export')
+  async export(@Res() res: Response) {
+    const buffer = await this.serviciosService.exportFullData();
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename=servicios_full_data.xlsx',
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
   @Get('autocomplete/id')
   autocompleteId(@Query('term') term: string) {
     return this.serviciosService.autocompleteId(term || '');

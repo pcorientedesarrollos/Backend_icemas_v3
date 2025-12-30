@@ -129,4 +129,124 @@ export class ClientesService {
       order: { nombre: 'ASC' },
     });
   }
+
+  async exportFullData(): Promise<Buffer> {
+    const clientes = await this.clientesRepository.find({
+      relations: [
+        'sucursales',
+        'sucursales.equipos',
+        'sucursales.equipos.marca',
+        'sucursales.equipos.tipoEquipo',
+        'sucursales.equipos.servicios',
+        'sucursales.equipos.servicios.tecnico',
+        'sucursales.equipos.servicios.tipoServicio',
+      ],
+      order: { nombre: 'ASC' },
+    });
+
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Clientes Data');
+
+    worksheet.columns = [
+      { header: 'ID Cliente', key: 'idCliente', width: 10 },
+      { header: 'Nombre Cliente', key: 'clienteNombre', width: 30 },
+      { header: 'Empresa', key: 'empresa', width: 25 },
+      { header: 'Teléfono Cliente', key: 'clienteTelefono', width: 15 },
+      { header: 'Email Cliente', key: 'clienteEmail', width: 25 },
+      { header: 'Sucursal', key: 'sucursalNombre', width: 25 },
+      { header: 'Dirección Sucursal', key: 'sucursalDireccion', width: 30 },
+      { header: 'Contacto Sucursal', key: 'sucursalContacto', width: 25 },
+      { header: 'Teléfono Sucursal', key: 'sucursalTelefono', width: 15 },
+      { header: 'Equipo', key: 'equipoNombre', width: 20 },
+      { header: 'Serie', key: 'equipoSerie', width: 15 },
+      { header: 'Modelo', key: 'equipoModelo', width: 15 },
+      { header: 'Marca', key: 'equipoMarca', width: 15 },
+      { header: 'Tipo Equipo', key: 'tipoEquipo', width: 15 },
+      { header: 'Folio Servicio', key: 'folioServicio', width: 15 },
+      { header: 'Fecha Servicio', key: 'fechaServicio', width: 15 },
+      { header: 'Estado Servicio', key: 'estadoServicio', width: 15 },
+      { header: 'Técnico', key: 'tecnico', width: 20 },
+    ];
+
+    clientes.forEach((cliente) => {
+      if (!cliente.sucursales || cliente.sucursales.length === 0) {
+        // Cliente sin sucursales
+        worksheet.addRow({
+          idCliente: cliente.idCliente,
+          clienteNombre: cliente.nombre,
+          empresa: cliente.empresa,
+          clienteTelefono: cliente.telefono,
+          clienteEmail: cliente.email,
+        });
+        return;
+      }
+
+      cliente.sucursales.forEach((sucursal) => {
+        if (!sucursal.equipos || sucursal.equipos.length === 0) {
+          // Sucursal sin equipos
+          worksheet.addRow({
+            idCliente: cliente.idCliente,
+            clienteNombre: cliente.nombre,
+            empresa: cliente.empresa,
+            clienteTelefono: cliente.telefono,
+            clienteEmail: cliente.email,
+            sucursalNombre: sucursal.nombre,
+            sucursalDireccion: sucursal.direccion,
+            sucursalContacto: sucursal.contacto,
+            sucursalTelefono: sucursal.telefono,
+          });
+          return;
+        }
+
+        sucursal.equipos.forEach((equipo) => {
+          if (!equipo.servicios || equipo.servicios.length === 0) {
+            // Equipo sin servicios
+            worksheet.addRow({
+              idCliente: cliente.idCliente,
+              clienteNombre: cliente.nombre,
+              empresa: cliente.empresa,
+              clienteTelefono: cliente.telefono,
+              clienteEmail: cliente.email,
+              sucursalNombre: sucursal.nombre,
+              sucursalDireccion: sucursal.direccion,
+              sucursalContacto: sucursal.contacto,
+              sucursalTelefono: sucursal.telefono,
+              equipoNombre: equipo.nombre,
+              equipoSerie: equipo.serie,
+              equipoModelo: equipo.modelo,
+              equipoMarca: equipo.marca?.nombre,
+              tipoEquipo: equipo.tipoEquipo?.nombre,
+            });
+            return;
+          }
+
+          equipo.servicios.forEach((servicio) => {
+            worksheet.addRow({
+              idCliente: cliente.idCliente,
+              clienteNombre: cliente.nombre,
+              empresa: cliente.empresa,
+              clienteTelefono: cliente.telefono,
+              clienteEmail: cliente.email,
+              sucursalNombre: sucursal.nombre,
+              sucursalDireccion: sucursal.direccion,
+              sucursalContacto: sucursal.contacto,
+              sucursalTelefono: sucursal.telefono,
+              equipoNombre: equipo.nombre,
+              equipoSerie: equipo.serie,
+              equipoModelo: equipo.modelo,
+              equipoMarca: equipo.marca?.nombre,
+              tipoEquipo: equipo.tipoEquipo?.nombre,
+              folioServicio: servicio.folio,
+              fechaServicio: servicio.fechaServicio,
+              estadoServicio: servicio.estado,
+              tecnico: servicio.tecnico?.nombre,
+            });
+          });
+        });
+      });
+    });
+
+    return await workbook.xlsx.writeBuffer();
+  }
 }

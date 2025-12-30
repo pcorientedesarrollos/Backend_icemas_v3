@@ -480,4 +480,63 @@ export class ServiciosService {
 
     return servicios.map((s) => s.nombre);
   }
+
+  async exportFullData(): Promise<Buffer> {
+    const servicios = await this.serviciosRepository.find({
+      relations: [
+        'cliente',
+        'sucursal',
+        'equipo',
+        'tecnico',
+        'tipoServicio',
+        'equiposAsignados',
+        'equiposAsignados.equipo',
+      ],
+      order: { fechaServicio: 'DESC' },
+    });
+
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Servicios Data');
+
+    worksheet.columns = [
+      { header: 'Folio', key: 'folio', width: 15 },
+      { header: 'Fecha', key: 'fecha', width: 15 },
+      { header: 'Estado', key: 'estado', width: 15 },
+      { header: 'Cliente', key: 'cliente', width: 30 },
+      { header: 'Sucursal', key: 'sucursal', width: 25 },
+      { header: 'Dirección', key: 'direccion', width: 30 },
+      { header: 'Equipo Principal', key: 'equipo', width: 25 },
+      { header: 'Serie Principal', key: 'serie', width: 20 },
+      { header: 'Equipos Adicionales', key: 'equiposAdicionales', width: 40 },
+      { header: 'Tipo Servicio', key: 'tipoServicio', width: 20 },
+      { header: 'Técnico', key: 'tecnico', width: 25 },
+      { header: 'Detalle Trabajo', key: 'detalle', width: 50 },
+      { header: 'Descripción', key: 'descripcion', width: 50 },
+    ];
+
+    servicios.forEach((servicio) => {
+      const equiposAdicionales = servicio.equiposAsignados
+        ?.map((ea) => `${ea.equipo?.nombre} (${ea.equipo?.serie})`)
+        .join(', ');
+
+      worksheet.addRow({
+        folio: servicio.folio,
+        fecha: servicio.fechaServicio,
+        estado: servicio.estado,
+        cliente: servicio.cliente?.nombre,
+        sucursal: servicio.sucursal?.nombre,
+        direccion: servicio.sucursal?.direccion,
+        equipo: servicio.equipo?.nombre,
+        serie: servicio.equipo?.serie,
+        equiposAdicionales: equiposAdicionales,
+        tipoServicio: servicio.tipoServicio?.nombre,
+        tecnico: servicio.tecnico?.nombre,
+        detalle: servicio.detalleTrabajo,
+        descripcion: servicio.descripcion,
+      });
+    });
+
+    return await workbook.xlsx.writeBuffer();
+  }
 }
