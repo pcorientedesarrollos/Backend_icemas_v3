@@ -31,10 +31,6 @@ async function bootstrap() {
         'http://localhost:4200',
       ];
 
-      console.log('CORS Check - Origin:', origin);
-      console.log('CORS Check - Allowed:', allowedOrigins);
-      console.log('CORS Check - NODE_ENV:', process.env.NODE_ENV);
-
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
