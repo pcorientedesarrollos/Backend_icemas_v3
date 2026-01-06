@@ -87,10 +87,10 @@ export class PdfService {
           .font('Helvetica').text(`  ${servicio.cliente.telefono}`, { continued: false });
       }
 
-      if (servicio.cliente?.email) {
-        doc.font('Helvetica-Bold').text('Email:', pageWidth / 2, doc.y - 10, { continued: true })
-          .font('Helvetica').text(`  ${servicio.cliente.email}`);
-      }
+      // if (servicio.cliente?.email) {
+      //   doc.font('Helvetica-Bold').text('Email:', pageWidth / 2, doc.y - 10, { continued: true })
+      //     .font('Helvetica').text(`  ${servicio.cliente.email}`);
+      // }
 
       if (servicio.sucursal) {
         doc.moveDown(0.3);
